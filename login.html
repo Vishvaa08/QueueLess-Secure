@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>QueueLess - Login</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #login_container {
+        width: 90%;
+        max-width: 450px;
+        text-align: center;
+      }
+
+      #login_container h1 {
+        font-size: 4rem;
+        letter-spacing: -0.06em;
+        margin: 0;
+      }
+
+      #login_container h2 {
+        font-size: 2rem;
+        margin: 2rem 0 0.5rem;
+        letter-spacing: -0.03em;
+      }
+
+      #login_container p {
+        color: #666;
+        font-size: 1rem;
+        margin: 0 0 2.5rem;
+      }
+
+      #login_form {
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+      }
+
+      #login_form label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+
+      #login_form input {
+        width: 100%;
+        padding: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 1rem;
+        margin-bottom: 1.2rem;
+        outline: none;
+      }
+
+      #login_form input:focus {
+        border-color: #000;
+      }
+
+      #login_button {
+        margin-top: 0.5rem;
+        padding: 1rem;
+        border: none;
+        border-radius: 999px;
+        background-color: #000;
+        color: #fff;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+
+      #login_button:hover {
+        opacity: 0.8;
+      }
+
+      #login_links {
+        margin-top: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+      }
+
+      #login_links a {
+        color: #000;
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+
+      #login_links a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 768px) {
+        #login_container {
+          width: 85%;
+        }
+
+        #login_container h1 {
+          font-size: 3rem;
+        }
+
+        #login_container h2 {
+          font-size: 1.7rem;
+        }
+
+        #login_container p {
+          font-size: 0.9rem;
+          margin-bottom: 2rem;
+        }
+
+        #login_form input {
+          padding: 0.9rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main id="login_container">
+      <h1>QueueLess</h1>
+
+      <h2>Welcome back.</h2>
+
+      <p>Log in to manage your queue.</p>
+
+      <form id="login_form">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="Enter your email"
+          required
+        />
+
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Enter your password"
+          required
+        />
+
+        <button id="login_button" type="submit">Login</button>
+      </form>
+
+      <div id="login_links">
+        <a href="forgot-password.html">Forgot password?</a>
+        <a id="register_link" href="patient-register.html">
+          Don't have an account? Register
+        </a>
+        <a href="index.html">← Back to QueueLess</a>
+      </div>
+    </main>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+
+      import {
+        getAuth,
+        signInWithEmailAndPassword,
+        setPersistence,
+        browserLocalPersistence,
+        signOut,
+      } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+
+      import {
+        getFirestore,
+        doc,
+        getDoc,
+        collection,
+        addDoc,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBguotQzZiq8tfJ7f2KKEK9mslBOySQg6c",
+        authDomain: "queueless-c563d.firebaseapp.com",
+        projectId: "queueless-c563d",
+        storageBucket: "queueless-c563d.firebasestorage.app",
+        messagingSenderId: "529656062517",
+        appId: "1:529656062517:web:034a5dcac0f6bc5c75877c",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      const loginForm = document.getElementById("login_form");
+      const loginButton = document.getElementById("login_button");
+
+      async function recordSecurityEvent(user, role) {
+        try {
+          await addDoc(collection(db, "securityLogs"), {
+            uid: user.uid,
+            role: role,
+            event: "Successful Login",
+            details: "User logged in successfully.",
+            timestamp: serverTimestamp(),
+          });
+        } catch (error) {
+          console.error("Security logging error:", error);
+        }
+      }
+
+      loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+
+        loginButton.disabled = true;
+        loginButton.textContent = "Logging in...";
+
+        sessionStorage.removeItem("queueLessPatientId");
+        sessionStorage.removeItem("queueLessStaffId");
+        sessionStorage.removeItem("queueLessAdminId");
+
+        try {
+          await setPersistence(auth, browserLocalPersistence);
+
+          const userCredential = await signInWithEmailAndPassword(
+            auth,
+            email,
+            password,
+          );
+
+          const user = userCredential.user;
+
+          const userDocument = await getDoc(doc(db, "users", user.uid));
+
+          if (!userDocument.exists()) {
+            await signOut(auth);
+            alert(
+              "Account information could not be found. Please contact the administrator.",
+            );
+            loginButton.disabled = false;
+            loginButton.textContent = "Login";
+            return;
+          }
+
+          const userData = userDocument.data();
+
+          if (userData.status !== "active") {
+            await signOut(auth);
+            alert(
+              "Your account is not active. Please contact the administrator.",
+            );
+            loginButton.disabled = false;
+            loginButton.textContent = "Login";
+            return;
+          }
+
+          if (!["patient", "staff", "admin"].includes(userData.role)) {
+            await signOut(auth);
+            alert("Invalid account role. Please contact the administrator.");
+            loginButton.disabled = false;
+            loginButton.textContent = "Login";
+            return;
+          }
+
+          await recordSecurityEvent(user, userData.role);
+
+          if (userData.role === "patient") {
+            sessionStorage.setItem("queueLessPatientId", user.uid);
+            window.location.href = "patient-dashboard.html";
+          } else if (userData.role === "staff") {
+            sessionStorage.setItem("queueLessStaffId", user.uid);
+            window.location.href = "staff-dashboard.html";
+          } else if (userData.role === "admin") {
+            sessionStorage.setItem("queueLessAdminId", user.uid);
+            window.location.href = "admin-dashboard.html";
+          }
+        } catch (error) {
+          console.error("Login error:", error);
+
+          let errorMessage = "Unable to log in. Please try again.";
+
+          if (
+            error.code === "auth/invalid-credential" ||
+            error.code === "auth/user-not-found" ||
+            error.code === "auth/wrong-password"
+          ) {
+            errorMessage = "Invalid email or password.";
+          } else if (error.code === "auth/invalid-email") {
+            errorMessage = "Please enter a valid email address.";
+          } else if (error.code === "auth/too-many-requests") {
+            errorMessage = "Too many login attempts. Please try again later.";
+          } else if (error.code === "auth/network-request-failed") {
+            errorMessage =
+              "Network error. Please check your internet connection.";
+          }
+
+          alert(errorMessage);
+
+          loginButton.disabled = false;
+          loginButton.textContent = "Login";
+        }
+      });
+    </script>
+  </body>
+</html>

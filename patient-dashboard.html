@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>QueueLess - Patient Dashboard</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f7f7f7;
+        color: #000;
+      }
+
+      #navbar {
+        height: 10vh;
+        padding: 0 5%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #fff;
+        border-bottom: 1px solid #e5e5e5;
+      }
+
+      #brand {
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+      }
+
+      #nav_actions {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+      }
+
+      #medical_records_button,
+      #logout_button {
+        border: none;
+        background: none;
+        font-size: 0.9rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        color: #000;
+        text-decoration: none;
+      }
+
+      #medical_records_button:hover,
+      #logout_button:hover {
+        text-decoration: underline;
+      }
+
+      #dashboard {
+        width: 90%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 4rem 0;
+      }
+
+      #welcome_section {
+        margin-bottom: 3rem;
+      }
+
+      #welcome_section h1 {
+        font-size: 3rem;
+        letter-spacing: -0.05em;
+        margin: 0 0 0.7rem;
+      }
+
+      #welcome_section p {
+        margin: 0;
+        color: #666;
+        font-size: 1rem;
+      }
+
+      #main_actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+      }
+
+      .dashboard_card {
+        background: #fff;
+        border: 1px solid #e5e5e5;
+        border-radius: 16px;
+        padding: 2rem;
+      }
+
+      .dashboard_card h2 {
+        font-size: 1.4rem;
+        margin: 0 0 0.7rem;
+      }
+
+      .dashboard_card p {
+        color: #666;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin: 0 0 1.5rem;
+      }
+
+      .card_button {
+        display: inline-block;
+        padding: 0.8rem 1.5rem;
+        border-radius: 999px;
+        background: #000;
+        color: #fff;
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+
+      .card_button:hover {
+        opacity: 0.8;
+      }
+
+      #find_clinic_button {
+        display: inline-block;
+        padding: 0.9rem 1.5rem;
+        border-radius: 999px;
+        background: #000;
+        color: #fff;
+        text-decoration: none;
+        font-size: 0.9rem;
+        cursor: pointer;
+      }
+
+      #current_queue_button {
+        display: inline-block;
+        padding: 0.9rem 1.5rem;
+        border-radius: 999px;
+        background: #000;
+        color: #fff;
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+
+      #current_queue_button:hover,
+      #find_clinic_button:hover {
+        opacity: 0.8;
+      }
+
+      @media (max-width: 768px) {
+        #navbar {
+          height: 8vh;
+          padding: 0 7%;
+        }
+
+        #brand {
+          font-size: 1.2rem;
+        }
+
+        #nav_actions {
+          gap: 0.3rem;
+        }
+
+        #medical_records_button,
+        #logout_button {
+          font-size: 0.8rem;
+          padding: 0.4rem;
+        }
+
+        #dashboard {
+          width: 85%;
+          padding: 3rem 0;
+        }
+
+        #welcome_section {
+          margin-bottom: 2rem;
+        }
+
+        #welcome_section h1 {
+          font-size: 2.2rem;
+        }
+
+        #main_actions {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+
+        .dashboard_card {
+          padding: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav id="navbar">
+      <div id="brand">QUEUELESS</div>
+
+      <div id="nav_actions">
+        <a id="medical_records_button" href="patient-medical-record.html">
+          Medical Records
+        </a>
+
+        <button id="logout_button" type="button">Logout</button>
+      </div>
+    </nav>
+
+    <main id="dashboard">
+      <section id="welcome_section">
+        <h1>Good day.</h1>
+        <p>Manage your clinic visits without waiting blindly.</p>
+      </section>
+
+      <section id="main_actions">
+        <div class="dashboard_card">
+          <h2>Join a Queue</h2>
+
+          <p>Find a clinic and join an available queue before arriving.</p>
+
+          <a id="find_clinic_button" href="find-clinic.html"> Find a Clinic </a>
+        </div>
+
+        <div class="dashboard_card">
+          <h2>Current Queue</h2>
+
+          <p id="current_queue_message">Checking your current queue...</p>
+
+          <a id="current_queue_button" href="queue-status.html">
+            View Status
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+
+      import {
+        getAuth,
+        signOut,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+
+      import {
+        getFirestore,
+        doc,
+        getDoc,
+        collection,
+        addDoc,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBguotQzZiq8tfJ7f2KKEK9mslBOySQg6c",
+        authDomain: "queueless-c563d.firebaseapp.com",
+        projectId: "queueless-c563d",
+        storageBucket: "queueless-c563d.firebasestorage.app",
+        messagingSenderId: "529656062517",
+        appId: "1:529656062517:web:034a5dcac0f6bc5c75877c",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      const welcomeHeading = document.querySelector("#welcome_section h1");
+
+      const currentQueueMessage = document.getElementById(
+        "current_queue_message",
+      );
+
+      const currentQueueButton = document.getElementById(
+        "current_queue_button",
+      );
+
+      const logoutButton = document.getElementById("logout_button");
+
+      async function loadPatientDashboard(user) {
+        try {
+          const userDocument = await getDoc(doc(db, "users", user.uid));
+
+          if (!userDocument.exists()) {
+            await signOut(auth);
+            sessionStorage.removeItem("queueLessPatientId");
+            alert("Account information could not be found.");
+            window.location.href = "login.html";
+            return;
+          }
+
+          const userData = userDocument.data();
+
+          if (userData.role !== "patient" || userData.status !== "active") {
+            await signOut(auth);
+            sessionStorage.removeItem("queueLessPatientId");
+            alert("Your account is not authorised to access this page.");
+            window.location.href = "login.html";
+            return;
+          }
+
+          sessionStorage.setItem("queueLessPatientId", user.uid);
+
+          const firstName = userData.name.split(" ")[0];
+
+          welcomeHeading.textContent = `Good day, ${firstName}.`;
+
+          currentQueueMessage.textContent =
+            "Your queue information will appear here.";
+
+          currentQueueButton.textContent = "View Queue";
+          currentQueueButton.href = "queue-status.html";
+        } catch (error) {
+          console.error("Dashboard error:", error);
+
+          currentQueueMessage.textContent =
+            "Unable to load your dashboard. Please try again.";
+        }
+      }
+
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          sessionStorage.removeItem("queueLessPatientId");
+          window.location.href = "login.html";
+          return;
+        }
+
+        await loadPatientDashboard(user);
+      });
+
+      logoutButton.addEventListener("click", async () => {
+        try {
+          const user = auth.currentUser;
+
+          if (user) {
+            try {
+              await addDoc(collection(db, "securityLogs"), {
+                uid: user.uid,
+                role: "patient",
+                event: "User Logout",
+                details: "Patient logged out successfully.",
+                timestamp: serverTimestamp(),
+              });
+            } catch (logError) {
+              console.error("Security logging error:", logError);
+            }
+          }
+
+          await signOut(auth);
+          sessionStorage.removeItem("queueLessPatientId");
+          window.location.href = "login.html";
+        } catch (error) {
+          console.error("Logout error:", error);
+          alert("Logout failed. Please try again.");
+        }
+      });
+    </script>
+  </body>
+</html>

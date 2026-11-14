@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>QueueLess</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+        scroll-snap-type: y mandatory;
+        overflow-y: scroll;
+      }
+
+      #top_navigation {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 10vh;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        padding: 0 2rem;
+        z-index: 1000;
+      }
+
+      .top_navigation_left {
+        width: 75%;
+        font-size: 1.3rem;
+        font-weight: 600;
+      }
+
+      .top_navigation_left a {
+        color: #000;
+        text-decoration: none;
+      }
+
+      .top_navigation_right {
+        width: 25%;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .top_navigation_right a {
+        color: #000;
+        text-decoration: none;
+        font-size: 1.1rem;
+      }
+
+      .page {
+        height: 100vh;
+        width: 100%;
+        padding-top: 10vh;
+        scroll-snap-align: start;
+      }
+
+      #hero {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 10vh 2rem 0;
+      }
+
+      #hero h1 {
+        font-size: clamp(4rem, 9vw, 9rem);
+        line-height: 0.9;
+        margin: 0;
+        letter-spacing: -0.06em;
+      }
+
+      #hero p {
+        max-width: 650px;
+        margin-top: 2rem;
+        font-size: 1.2rem;
+        line-height: 1.6;
+      }
+
+      #get_started {
+        margin-top: 2.5rem;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 999px;
+        background-color: #000;
+        color: #fff;
+        font-size: 1rem;
+        cursor: pointer;
+        text-decoration: none;
+      }
+
+      #how_it_works {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+
+      .how_it_works_content {
+        width: 85%;
+        max-width: 1200px;
+      }
+
+      .section_label {
+        font-size: 0.85rem;
+        letter-spacing: 0.15em;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+      }
+
+      .how_it_works_content h2 {
+        font-size: clamp(3.5rem, 7vw, 7rem);
+        line-height: 0.95;
+        letter-spacing: -0.05em;
+        margin: 0;
+      }
+
+      .section_description {
+        max-width: 600px;
+        font-size: 1.15rem;
+        line-height: 1.6;
+        margin: 2rem auto 0;
+      }
+
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2rem;
+        margin-top: 4rem;
+      }
+
+      .step {
+        border-top: 1px solid #ccc;
+        padding-top: 1.2rem;
+      }
+
+      .step span {
+        font-size: 0.85rem;
+        color: #666;
+      }
+
+      .step h3 {
+        font-size: 1.3rem;
+        margin: 1rem 0 0.5rem;
+      }
+
+      .step p {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        color: #555;
+        margin: 0;
+      }
+
+      #next_page {
+        display: inline-block;
+        margin-top: 3rem;
+        padding: 0.9rem 1.8rem;
+        border: 1px solid #000;
+        border-radius: 999px;
+        color: #000;
+        text-decoration: none;
+        font-size: 0.95rem;
+        transition: 0.3s;
+      }
+
+      #next_page:hover {
+        background-color: #000;
+        color: #fff;
+      }
+
+      #why_queueless {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+
+      .why_content {
+        width: 85%;
+        max-width: 1200px;
+      }
+
+      .why_content h2 {
+        font-size: clamp(3.5rem, 7vw, 7rem);
+        line-height: 0.95;
+        letter-spacing: -0.05em;
+        margin: 0;
+      }
+
+      .why_features {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        margin-top: 4rem;
+        text-align: left;
+      }
+
+      .why_feature {
+        border-top: 1px solid #ccc;
+        padding-top: 1.2rem;
+      }
+
+      .why_feature span {
+        font-size: 0.85rem;
+        color: #666;
+      }
+
+      .why_feature h3 {
+        font-size: 1.25rem;
+        margin: 1rem 0 0.5rem;
+      }
+
+      .why_feature p {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        color: #555;
+        margin: 0;
+      }
+
+      #footer {
+        min-height: 30vh;
+        padding: 4rem 7.5%;
+        border-top: 1px solid #ddd;
+      }
+
+      .footer_content {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr;
+        gap: 3rem;
+      }
+
+      .footer_content h2 {
+        margin: 0;
+        font-size: 2rem;
+      }
+
+      .footer_content p {
+        color: #666;
+        line-height: 1.5;
+      }
+
+      .footer_links,
+      .footer_contact {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+      }
+
+      .footer_links a,
+      .footer_contact a {
+        color: #000;
+        text-decoration: none;
+      }
+
+      .footer_contact h3 {
+        margin: 0;
+      }
+
+      .footer_bottom {
+        margin-top: 4rem;
+        padding-top: 1rem;
+        border-top: 1px solid #ddd;
+        color: #777;
+        font-size: 0.85rem;
+      }
+
+      @media (max-width: 768px) {
+        #top_navigation {
+          height: 8vh;
+          padding: 0 1.2rem;
+        }
+
+        .top_navigation_left {
+          width: 75%;
+          font-size: 1rem;
+        }
+
+        .top_navigation_right {
+          width: 25%;
+        }
+
+        .top_navigation_right a {
+          font-size: 1rem;
+        }
+
+        .page {
+          min-height: 100vh;
+          height: auto;
+          padding-top: 8vh;
+        }
+
+        #hero {
+          min-height: 100vh;
+          padding: 8vh 1.5rem 4rem;
+        }
+
+        #hero h1 {
+          font-size: clamp(3rem, 15vw, 5rem);
+          line-height: 0.92;
+          letter-spacing: -0.05em;
+        }
+
+        #hero p {
+          max-width: 90%;
+          margin-top: 1.5rem;
+          font-size: 1rem;
+          line-height: 1.5;
+        }
+
+        #get_started {
+          margin-top: 2rem;
+          padding: 0.9rem 1.7rem;
+        }
+
+        #how_it_works {
+          min-height: 100vh;
+          padding: 8vh 0 4rem;
+        }
+
+        .how_it_works_content {
+          width: 90%;
+        }
+
+        .section_label {
+          font-size: 0.7rem;
+          margin-bottom: 1rem;
+        }
+
+        .how_it_works_content h2,
+        .why_content h2 {
+          font-size: clamp(3rem, 14vw, 5rem);
+          line-height: 0.95;
+        }
+
+        .section_description {
+          max-width: 90%;
+          font-size: 1rem;
+          line-height: 1.5;
+          margin-top: 1.5rem;
+        }
+
+        .steps {
+          grid-template-columns: 1fr 1fr;
+          gap: 1.5rem;
+          margin-top: 3rem;
+        }
+
+        .step {
+          padding-top: 1rem;
+        }
+
+        .step h3 {
+          font-size: 1.1rem;
+          margin: 0.8rem 0 0.4rem;
+        }
+
+        .step p {
+          font-size: 0.85rem;
+          line-height: 1.4;
+        }
+
+        #next_page {
+          margin-top: 2.5rem;
+          padding: 0.8rem 1.5rem;
+        }
+
+        #why_queueless {
+          min-height: 100vh;
+          padding: 8vh 0 4rem;
+        }
+
+        .why_content {
+          width: 90%;
+        }
+
+        .why_features {
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+          margin-top: 3rem;
+        }
+
+        .why_feature {
+          padding-top: 1rem;
+        }
+
+        .why_feature h3 {
+          font-size: 1.1rem;
+          margin: 0.8rem 0 0.4rem;
+        }
+
+        .why_feature p {
+          font-size: 0.85rem;
+          line-height: 1.4;
+        }
+
+        #footer {
+          padding: 3rem 8%;
+        }
+
+        .footer_content {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+        }
+
+        .footer_content h2 {
+          font-size: 1.7rem;
+        }
+
+        .footer_bottom {
+          margin-top: 3rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="top_navigation">
+      <div class="top_navigation_left"><a href="#hero">QUEUELESS</a></div>
+
+      <div class="top_navigation_right">
+        <a href="login.html">Login</a>
+      </div>
+    </div>
+
+    <section id="hero" class="page">
+      <h1>
+        LESS WAITING.<br />
+        MORE KNOWING.
+      </h1>
+
+      <p>
+        QueueLess is a web-based virtual queue management system designed to
+        help outpatient clinics manage patient queues while giving patients
+        greater visibility over their waiting time.
+      </p>
+
+      <a id="get_started" href="#how_it_works"> Get Started ↓ </a>
+    </section>
+
+    <section id="how_it_works" class="page">
+      <div class="how_it_works_content">
+        <p class="section_label">HOW QUEUELESS WORKS</p>
+
+        <h2>
+          Your queue.<br />
+          Your time.
+        </h2>
+
+        <p class="section_description">
+          QueueLess allows patients to join and monitor their clinic queue
+          without spending unnecessary time waiting in the waiting area.
+        </p>
+
+        <div class="steps">
+          <div class="step">
+            <span>01</span>
+            <h3>Join</h3>
+            <p>
+              Join the queue online or scan the clinic's daily QR code when you
+              arrive.
+            </p>
+          </div>
+
+          <div class="step">
+            <span>02</span>
+            <h3>Track</h3>
+            <p>
+              View your queue number, current position and estimated waiting
+              time.
+            </p>
+          </div>
+
+          <div class="step">
+            <span>03</span>
+            <h3>Know</h3>
+            <p>Receive a notification when your turn is approaching.</p>
+          </div>
+
+          <div class="step">
+            <span>04</span>
+            <h3>Check In</h3>
+            <p>
+              Arrive at the clinic and confirm your presence before your
+              consultation.
+            </p>
+          </div>
+        </div>
+        <a id="next_page" href="#why_queueless">Why QueueLess ↓</a>
+      </div>
+    </section>
+
+    <section id="why_queueless" class="page">
+      <div class="why_content">
+        <p class="section_label">WHY QUEUELESS</p>
+
+        <h2>
+          Waiting shouldn't<br />
+          mean wondering.
+        </h2>
+
+        <p class="section_description">
+          QueueLess gives patients better visibility over their waiting time
+          while helping clinics manage their daily queues more efficiently.
+        </p>
+
+        <div class="why_features">
+          <div class="why_feature">
+            <span>01</span>
+            <h3>Less Physical Waiting</h3>
+            <p>
+              Patients can join the queue remotely instead of spending their
+              entire waiting period inside the clinic.
+            </p>
+          </div>
+
+          <div class="why_feature">
+            <span>02</span>
+            <h3>Know Your Position</h3>
+            <p>
+              Patients can see their queue number, position and estimated
+              waiting time.
+            </p>
+          </div>
+
+          <div class="why_feature">
+            <span>03</span>
+            <h3>Better Management</h3>
+            <p>
+              Clinic staff can manage the queue, call patients and record
+              no-shows through one dashboard.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer id="footer">
+      <div class="footer_content">
+        <div>
+          <h2>QueueLess</h2>
+          <p>Virtual queue management for outpatient clinics.</p>
+        </div>
+
+        <div class="footer_links">
+          <a href="#hero">Home</a>
+          <a href="#how_it_works">How It Works</a>
+          <a href="#why_queueless">Why QueueLess</a>
+          <a href="login.html">Login</a>
+        </div>
+
+        <div class="footer_contact">
+          <h3>Need help?</h3>
+          <a href="report.html">Report a Bug</a>
+        </div>
+      </div>
+
+      <div class="footer_bottom">© 2026 QueueLess</div>
+    </footer>
+  </body>
+</html>

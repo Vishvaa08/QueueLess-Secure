@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>QueueLess - Patient Registration</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 2rem 0;
+        min-height: 100vh;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #register_container {
+        width: 90%;
+        max-width: 450px;
+        text-align: center;
+      }
+
+      #register_container h1 {
+        font-size: 4rem;
+        letter-spacing: -0.06em;
+        margin: 0;
+      }
+
+      #register_container h2 {
+        font-size: 2rem;
+        margin: 2rem 0 0.5rem;
+        letter-spacing: -0.03em;
+      }
+
+      #register_container > p {
+        color: #666;
+        font-size: 1rem;
+        margin: 0 0 2.5rem;
+      }
+
+      #register_form {
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+      }
+
+      #register_form label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+
+      #register_form input,
+      #register_form select {
+        width: 100%;
+        padding: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 1rem;
+        margin-bottom: 1.2rem;
+        outline: none;
+        background: #fff;
+        color: #000;
+      }
+
+      #register_form input:focus,
+      #register_form select:focus {
+        border-color: #000;
+      }
+
+      #register_button {
+        margin-top: 0.5rem;
+        padding: 1rem;
+        border: none;
+        border-radius: 999px;
+        background-color: #000;
+        color: #fff;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+
+      #register_button:hover {
+        opacity: 0.8;
+      }
+
+      #register_links {
+        margin-top: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+      }
+
+      #register_links a {
+        color: #000;
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+
+      #register_links a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 768px) {
+        #register_container {
+          width: 85%;
+        }
+
+        #register_container h1 {
+          font-size: 3rem;
+        }
+
+        #register_container h2 {
+          font-size: 1.7rem;
+        }
+
+        #register_container > p {
+          font-size: 0.9rem;
+          margin-bottom: 2rem;
+        }
+
+        #register_form input,
+        #register_form select {
+          padding: 0.9rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main id="register_container">
+      <h1>QueueLess</h1>
+
+      <h2>Patient registration.</h2>
+
+      <p>Create your account to join clinic queues.</p>
+
+      <form id="register_form">
+        <label for="name">Full Name</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          placeholder="Enter your full name"
+          required
+        />
+
+        <label for="phone">Phone Number</label>
+        <input
+          type="tel"
+          id="phone"
+          name="phone"
+          placeholder="e.g. 0123456789"
+          required
+        />
+
+        <label for="gender">Gender</label>
+        <select id="gender" name="gender" required>
+          <option value="">Select your gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+          <option value="Prefer not to say">Prefer not to say</option>
+        </select>
+
+        <label for="date_of_birth">Date of Birth</label>
+        <input type="date" id="date_of_birth" name="date_of_birth" required />
+
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="Enter your email"
+          required
+        />
+
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Create a password"
+          required
+        />
+
+        <label for="confirm_password">Confirm Password</label>
+        <input
+          type="password"
+          id="confirm_password"
+          name="confirm_password"
+          placeholder="Confirm your password"
+          required
+        />
+
+        <button id="register_button" type="submit">Create Account</button>
+      </form>
+
+      <div id="register_links">
+        <a href="login.html">Already have an account? Login</a>
+      </div>
+    </main>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+      import {
+        getAuth,
+        createUserWithEmailAndPassword,
+      } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+      } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBguotQzZiq8tfJ7f2KKEK9mslBOySQg6c",
+        authDomain: "queueless-c563d.firebaseapp.com",
+        projectId: "queueless-c563d",
+        storageBucket: "queueless-c563d.firebasestorage.app",
+        messagingSenderId: "529656062517",
+        appId: "1:529656062517:web:034a5dcac0f6bc5c75877c",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      const registerForm = document.getElementById("register_form");
+
+      registerForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const name = document.getElementById("name").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const gender = document.getElementById("gender").value;
+        const dateOfBirth = document.getElementById("date_of_birth").value;
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const confirmPassword =
+          document.getElementById("confirm_password").value;
+
+        if (name.length < 2) {
+          alert("Please enter your full name.");
+          return;
+        }
+
+        const phonePattern = /^(01)[0-9]{8,9}$/;
+
+        if (!phonePattern.test(phone)) {
+          alert("Please enter a valid Malaysian phone number.");
+          return;
+        }
+
+        if (!gender) {
+          alert("Please select your gender.");
+          return;
+        }
+
+        if (!dateOfBirth) {
+          alert("Please enter your date of birth.");
+          return;
+        }
+
+        const birthDate = new Date(dateOfBirth + "T00:00:00");
+        const today = new Date();
+
+        if (birthDate > today) {
+          alert("Date of birth cannot be in the future.");
+          return;
+        }
+
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDifference = today.getMonth() - birthDate.getMonth();
+
+        if (
+          monthDifference < 0 ||
+          (monthDifference === 0 && today.getDate() < birthDate.getDate())
+        ) {
+          age--;
+        }
+
+        if (age < 21) {
+          alert("You must be at least 21 years old to register.");
+          return;
+        }
+
+        const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+        if (!passwordPattern.test(password)) {
+          alert(
+            "Password must be at least 8 characters and contain an uppercase letter, lowercase letter, and number.",
+          );
+          return;
+        }
+
+        if (password !== confirmPassword) {
+          alert("Passwords do not match.");
+          return;
+        }
+
+        try {
+          const userCredential = await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password,
+          );
+
+          const user = userCredential.user;
+
+          await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            name: name,
+            phone: phone,
+            gender: gender,
+            dateOfBirth: dateOfBirth,
+            age: age,
+            email: email,
+            role: "patient",
+            status: "active",
+          });
+
+          alert("Account created successfully.");
+
+          window.location.href = "patient-dashboard.html";
+        } catch (error) {
+          console.error("Registration error:", error.code, error.message);
+
+          if (error.code === "auth/email-already-in-use") {
+            alert("This email is already registered.");
+          } else if (error.code === "auth/invalid-email") {
+            alert("Please enter a valid email address.");
+          } else if (error.code === "auth/weak-password") {
+            alert("Password is too weak.");
+          } else if (error.code === "permission-denied") {
+            alert("Firestore permission denied. Check security rules.");
+          } else {
+            alert("Registration failed: " + error.code);
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

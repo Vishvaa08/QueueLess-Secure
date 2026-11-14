@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Staff Management | QueueLess Secure</title>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+      }
+
+      body {
+        background: #f4f6f9;
+        color: #333;
+      }
+
+      nav {
+        background: #fff;
+        color: white;
+        padding: 18px 6%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      nav h2 {
+        font-size: 22px;
+      }
+
+      nav a {
+        color: black;
+        text-decoration: none;
+      }
+
+      .container {
+        width: 88%;
+        max-width: 1100px;
+        margin: 35px auto;
+      }
+
+      .page-heading {
+        margin-bottom: 25px;
+      }
+
+      .page-heading h1 {
+        margin-bottom: 8px;
+      }
+
+      .page-heading p {
+        color: #666;
+      }
+
+      .section {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      }
+
+      .section h2 {
+        color: #17365d;
+        margin-bottom: 20px;
+        font-size: 21px;
+      }
+
+      .form-group {
+        margin-bottom: 18px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 15px;
+      }
+
+      .form-group input:focus {
+        outline: none;
+        border-color: #17365d;
+      }
+
+      .primary-button {
+        background: #17365d;
+        color: white;
+        border: none;
+        padding: 12px 22px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 15px;
+      }
+
+      .primary-button:hover {
+        background: #245184;
+      }
+
+      .primary-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .message {
+        margin-top: 15px;
+        font-size: 14px;
+      }
+
+      .table-container {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 14px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+      }
+
+      th {
+        background: #f4f6f9;
+        color: #17365d;
+      }
+
+      .status {
+        color: #16803c;
+        font-weight: bold;
+      }
+
+      @media (max-width: 600px) {
+        .container {
+          width: 92%;
+        }
+
+        .section {
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav>
+      <h2><a href="admin-dashboard.html">QueueLess Secure</a></h2>
+      <a href="admin-dashboard.html">Back to Dashboard</a>
+    </nav>
+
+    <main class="container">
+      <div class="page-heading">
+        <h1>Staff Management</h1>
+        <p>Register and manage hospital staff accounts.</p>
+      </div>
+
+      <section class="section">
+        <h2>Register New Staff</h2>
+
+        <form id="staff_form">
+          <div class="form-group">
+            <label for="staff_name">Full Name</label>
+            <input type="text" id="staff_name" maxlength="60" required />
+          </div>
+
+          <div class="form-group">
+            <label for="staff_email">Email Address</label>
+            <input type="email" id="staff_email" required />
+          </div>
+
+          <div class="form-group">
+            <label for="staff_password">Temporary Password</label>
+            <input type="password" id="staff_password" minlength="8" required />
+          </div>
+
+          <button type="submit" class="primary-button" id="register_button">
+            Register Staff
+          </button>
+
+          <p class="message" id="register_message"></p>
+        </form>
+      </section>
+
+      <section class="section">
+        <h2>Registered Staff</h2>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+
+            <tbody id="staff_table">
+              <tr>
+                <td colspan="3">Loading staff accounts...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+
+      import {
+        getAuth,
+        signOut,
+        onAuthStateChanged,
+        createUserWithEmailAndPassword,
+        deleteUser,
+      } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+
+      import {
+        getFirestore,
+        doc,
+        getDoc,
+        setDoc,
+        collection,
+        getDocs,
+        query,
+        where,
+        addDoc,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBguotQzZiq8tfJ7f2KKEK9mslBOySQg6c",
+        authDomain: "queueless-c563d.firebaseapp.com",
+        projectId: "queueless-c563d",
+        storageBucket: "queueless-c563d.firebasestorage.app",
+        messagingSenderId: "529656062517",
+        appId: "1:529656062517:web:034a5dcac0f6bc5c75877c",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      const staffApp = initializeApp(firebaseConfig, "StaffCreation");
+      const staffAuth = getAuth(staffApp);
+
+      const staffForm = document.getElementById("staff_form");
+      const registerButton = document.getElementById("register_button");
+      const registerMessage = document.getElementById("register_message");
+      const staffTable = document.getElementById("staff_table");
+
+      let adminVerified = false;
+
+      async function recordSecurityEvent(admin, staffEmail) {
+        try {
+          await addDoc(collection(db, "securityLogs"), {
+            uid: admin.uid,
+            role: "admin",
+            event: "Staff Account Created",
+            details: `Administrator created a staff account for ${staffEmail}.`,
+            timestamp: serverTimestamp(),
+          });
+        } catch (error) {
+          console.error("Security logging error:", error);
+        }
+      }
+
+      async function verifyAdmin(user) {
+        const userDocument = await getDoc(doc(db, "users", user.uid));
+
+        if (!userDocument.exists()) {
+          return false;
+        }
+
+        const userData = userDocument.data();
+
+        return userData.role === "admin" && userData.status === "active";
+      }
+
+      async function loadStaff() {
+        staffTable.innerHTML = "";
+
+        const loadingRow = document.createElement("tr");
+        const loadingCell = document.createElement("td");
+        loadingCell.colSpan = 3;
+        loadingCell.textContent = "Loading staff accounts...";
+        loadingRow.appendChild(loadingCell);
+        staffTable.appendChild(loadingRow);
+
+        try {
+          const staffQuery = query(
+            collection(db, "users"),
+            where("role", "==", "staff"),
+          );
+
+          const staffSnapshot = await getDocs(staffQuery);
+
+          staffTable.innerHTML = "";
+
+          if (staffSnapshot.empty) {
+            const row = document.createElement("tr");
+            const cell = document.createElement("td");
+            cell.colSpan = 3;
+            cell.textContent = "No staff accounts registered yet.";
+            row.appendChild(cell);
+            staffTable.appendChild(row);
+            return;
+          }
+
+          staffSnapshot.forEach((staffDocument) => {
+            const staff = staffDocument.data();
+
+            const row = document.createElement("tr");
+
+            const nameCell = document.createElement("td");
+            nameCell.textContent = staff.name || "N/A";
+
+            const emailCell = document.createElement("td");
+            emailCell.textContent = staff.email || "N/A";
+
+            const statusCell = document.createElement("td");
+            statusCell.textContent = staff.status || "Unknown";
+            statusCell.className = staff.status === "active" ? "status" : "";
+
+            row.appendChild(nameCell);
+            row.appendChild(emailCell);
+            row.appendChild(statusCell);
+
+            staffTable.appendChild(row);
+          });
+        } catch (error) {
+          console.error("Staff loading error:", error);
+
+          staffTable.innerHTML = "";
+
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          cell.colSpan = 3;
+          cell.textContent = "Unable to load staff accounts.";
+          row.appendChild(cell);
+          staffTable.appendChild(row);
+        }
+      }
+
+      staffForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        if (!adminVerified || !auth.currentUser) {
+          alert("Administrator access is required.");
+          return;
+        }
+
+        const admin = auth.currentUser;
+        const name = document.getElementById("staff_name").value.trim();
+        const email = document.getElementById("staff_email").value.trim();
+        const password = document.getElementById("staff_password").value;
+
+        const namePattern = /^[A-Za-z\s'-]{2,60}$/;
+
+        if (!namePattern.test(name)) {
+          alert(
+            "Name must be 2–60 characters and contain only letters, spaces, hyphens or apostrophes.",
+          );
+          return;
+        }
+
+        if (password.length < 8) {
+          alert("Password must contain at least 8 characters.");
+          return;
+        }
+
+        registerButton.disabled = true;
+        registerButton.textContent = "Registering...";
+        registerMessage.textContent = "";
+
+        let staffUser = null;
+
+        try {
+          const staffCredential = await createUserWithEmailAndPassword(
+            staffAuth,
+            email,
+            password,
+          );
+
+          staffUser = staffCredential.user;
+
+          await setDoc(doc(db, "users", staffUser.uid), {
+            uid: staffUser.uid,
+            name: name,
+            email: email,
+            role: "staff",
+            status: "active",
+          });
+
+          await signOut(staffAuth);
+
+          await recordSecurityEvent(admin, email);
+
+          registerMessage.style.color = "green";
+          registerMessage.textContent =
+            "Staff account registered successfully.";
+
+          staffForm.reset();
+
+          await loadStaff();
+        } catch (error) {
+          console.error("Staff registration error:", error);
+
+          if (staffUser) {
+            try {
+              await deleteUser(staffUser);
+            } catch (deleteError) {
+              console.error("Staff account cleanup error:", deleteError);
+            }
+          }
+
+          if (error.code === "auth/email-already-in-use") {
+            registerMessage.textContent =
+              "This email address is already registered.";
+          } else if (error.code === "auth/invalid-email") {
+            registerMessage.textContent = "Please enter a valid email address.";
+          } else if (error.code === "auth/weak-password") {
+            registerMessage.textContent = "Please use a stronger password.";
+          } else {
+            registerMessage.textContent =
+              "Unable to register staff. Please try again.";
+          }
+
+          registerMessage.style.color = "red";
+        } finally {
+          registerButton.disabled = false;
+          registerButton.textContent = "Register Staff";
+        }
+      });
+
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        try {
+          adminVerified = await verifyAdmin(user);
+
+          if (!adminVerified) {
+            await signOut(auth);
+            window.location.href = "login.html";
+            return;
+          }
+
+          sessionStorage.setItem("queueLessAdminId", user.uid);
+
+          await loadStaff();
+        } catch (error) {
+          console.error("Admin verification error:", error);
+          alert("Unable to verify administrator access.");
+        }
+      });
+    </script>
+  </body>
+</html>

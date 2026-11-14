@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard | QueueLess Secure</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+      }
+
+      body {
+        background: #f4f6f9;
+        color: #333;
+      }
+
+      nav {
+        background: #fff;
+        color: black;
+        padding: 18px 6%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      nav h2 {
+        font-size: 22px;
+      }
+
+      nav button {
+        background: white;
+        color: #17365d;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      nav button:hover {
+        background: #e5eaf0;
+      }
+
+      .container {
+        width: 88%;
+        max-width: 1200px;
+        margin: 35px auto;
+      }
+
+      .welcome {
+        margin-bottom: 30px;
+      }
+
+      .welcome h1 {
+        font-size: 28px;
+        margin-bottom: 8px;
+      }
+
+      .welcome p {
+        color: #666;
+      }
+
+      .section-title {
+        margin: 30px 0 18px;
+        font-size: 21px;
+      }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+      }
+
+      .card {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      }
+
+      .card h3 {
+        color: #666;
+        font-size: 15px;
+        margin-bottom: 15px;
+      }
+
+      .card p {
+        font-size: 28px;
+        font-weight: bold;
+        color: #17365d;
+      }
+
+      .management-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+      }
+
+      .management-card {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      }
+
+      .management-card h3 {
+        margin-bottom: 10px;
+        color: #17365d;
+      }
+
+      .management-card p {
+        color: #666;
+        line-height: 1.5;
+      }
+
+      .management-card button {
+        margin-top: 18px;
+        padding: 10px 18px;
+        background: #17365d;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      .management-card button:hover {
+        background: #245184;
+      }
+
+      @media (max-width: 700px) {
+        .dashboard-grid,
+        .management-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .container {
+          width: 92%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <h2>QueueLess Secure</h2>
+      <button id="logout_button">Logout</button>
+    </nav>
+
+    <main class="container">
+      <section class="welcome">
+        <h1 id="welcome_heading">Welcome, Administrator</h1>
+        <p>Manage users and monitor the QueueLess system.</p>
+      </section>
+
+      <h2 class="section-title">System Overview</h2>
+
+      <section class="dashboard-grid">
+        <div class="card">
+          <h3>Total Patients</h3>
+          <p id="total_patients">--</p>
+        </div>
+
+        <div class="card">
+          <h3>Total Staff</h3>
+          <p id="total_staff">--</p>
+        </div>
+
+        <div class="card">
+          <h3>System Status</h3>
+          <p style="font-size: 20px">Active</p>
+        </div>
+      </section>
+
+      <h2 class="section-title">Management</h2>
+
+      <section class="management-grid">
+        <div class="management-card">
+          <h3>Staff Management</h3>
+          <p>Register new staff members and manage existing staff accounts.</p>
+          <button id="staff_management_button">Manage Staff</button>
+        </div>
+
+        <div class="management-card">
+          <h3>Security Logs</h3>
+          <p>Review security-related activities and account events.</p>
+          <button id="security_logs_button">View Security Logs</button>
+        </div>
+      </section>
+    </main>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+
+      import {
+        getAuth,
+        signOut,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+
+      import {
+        getFirestore,
+        doc,
+        getDoc,
+        collection,
+        getCountFromServer,
+        query,
+        where,
+        addDoc,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBguotQzZiq8tfJ7f2KKEK9mslBOySQg6c",
+        authDomain: "queueless-c563d.firebaseapp.com",
+        projectId: "queueless-c563d",
+        storageBucket: "queueless-c563d.firebasestorage.app",
+        messagingSenderId: "529656062517",
+        appId: "1:529656062517:web:034a5dcac0f6bc5c75877c",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      const welcomeHeading = document.getElementById("welcome_heading");
+      const logoutButton = document.getElementById("logout_button");
+
+      async function loadStatistics() {
+        try {
+          const patientsQuery = query(
+            collection(db, "users"),
+            where("role", "==", "patient"),
+          );
+
+          const staffQuery = query(
+            collection(db, "users"),
+            where("role", "==", "staff"),
+          );
+
+          const [patientsSnapshot, staffSnapshot] = await Promise.all([
+            getCountFromServer(patientsQuery),
+            getCountFromServer(staffQuery),
+          ]);
+
+          document.getElementById("total_patients").textContent =
+            patientsSnapshot.data().count;
+
+          document.getElementById("total_staff").textContent =
+            staffSnapshot.data().count;
+        } catch (error) {
+          console.error("Statistics error:", error);
+          document.getElementById("total_patients").textContent = "Error";
+          document.getElementById("total_staff").textContent = "Error";
+        }
+      }
+
+      async function loadAdminDashboard(user) {
+        try {
+          const userDocument = await getDoc(doc(db, "users", user.uid));
+
+          if (!userDocument.exists()) {
+            await signOut(auth);
+            window.location.href = "login.html";
+            return;
+          }
+
+          const userData = userDocument.data();
+
+          if (userData.role !== "admin" || userData.status !== "active") {
+            await signOut(auth);
+            alert("You are not authorised to access this page.");
+            window.location.href = "login.html";
+            return;
+          }
+
+          welcomeHeading.textContent = `Welcome, ${userData.name || "Administrator"}`;
+
+          sessionStorage.setItem("queueLessAdminId", user.uid);
+
+          await loadStatistics();
+        } catch (error) {
+          console.error("Admin dashboard error:", error);
+          alert("Unable to load administrator information.");
+        }
+      }
+
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        await loadAdminDashboard(user);
+      });
+
+      logoutButton.addEventListener("click", async () => {
+        try {
+          const user = auth.currentUser;
+
+          if (user) {
+            try {
+              await addDoc(collection(db, "securityLogs"), {
+                uid: user.uid,
+                role: "admin",
+                event: "User Logout",
+                details: "Administrator logged out successfully.",
+                timestamp: serverTimestamp(),
+              });
+            } catch (logError) {
+              console.error("Security logging error:", logError);
+            }
+          }
+
+          await signOut(auth);
+          sessionStorage.removeItem("queueLessAdminId");
+          window.location.href = "login.html";
+        } catch (error) {
+          console.error("Logout error:", error);
+          alert("Logout failed. Please try again.");
+        }
+      });
+
+      document
+        .getElementById("staff_management_button")
+        .addEventListener("click", () => {
+          window.location.href = "staff-management.html";
+        });
+
+      document
+        .getElementById("security_logs_button")
+        .addEventListener("click", () => {
+          window.location.href = "security-logs.html";
+        });
+    </script>
+  </body>
+</html>
